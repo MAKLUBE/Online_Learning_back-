@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: online_learning_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployments/postgres/init-multiple-dbs.sql:/docker-entrypoint-initdb.d/001-init-multiple-dbs.sql:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: online_learning_redis
+    ports:
+      - "6379:6379"
+
+  nats:
+    image: nats:2-alpine
+    container_name: online_learning_nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-m", "8222"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: online_learning_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: online_learning_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
