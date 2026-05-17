@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package courses;
+
+option go_package = "online-learning-adapters/pkg/gen/courses;coursepb";
+
+service CourseService {
+  rpc CreateCourse(CreateCourseRequest) returns (CourseResponse);
+  rpc GetCourse(GetCourseRequest) returns (CourseResponse);
+  rpc UpdateCourse(UpdateCourseRequest) returns (CourseResponse);
+  rpc DeleteCourse(DeleteCourseRequest) returns (Empty);
+  rpc ListCourses(ListCoursesRequest) returns (ListCoursesResponse);
+  rpc SearchCourses(SearchCoursesRequest) returns (ListCoursesResponse);
+  rpc PublishCourse(PublishCourseRequest) returns (CourseResponse);
+  rpc CreateModule(CreateModuleRequest) returns (ModuleResponse);
+  rpc UpdateModule(UpdateModuleRequest) returns (ModuleResponse);
+  rpc DeleteModule(DeleteModuleRequest) returns (Empty);
+  rpc CreateLesson(CreateLessonRequest) returns (LessonResponse);
+  rpc UpdateLesson(UpdateLessonRequest) returns (LessonResponse);
+  rpc DeleteLesson(DeleteLessonRequest) returns (Empty);
+  rpc GetLesson(GetLessonRequest) returns (LessonResponse);
+}
+
+message CreateCourseRequest { string title = 1; string description = 2; string instructor_id = 3; }
+message GetCourseRequest { string id = 1; }
+message UpdateCourseRequest { string id = 1; string title = 2; string description = 3; }
+message DeleteCourseRequest { string id = 1; }
+message ListCoursesRequest {}
+message SearchCoursesRequest { string query = 1; }
+message PublishCourseRequest { string id = 1; }
+message CourseResponse { string id = 1; string title = 2; string description = 3; string instructor_id = 4; bool published = 5; }
+message ListCoursesResponse { repeated CourseResponse courses = 1; }
+message CreateModuleRequest { string course_id = 1; string title = 2; int32 position = 3; }
+message UpdateModuleRequest { string id = 1; string title = 2; int32 position = 3; }
+message DeleteModuleRequest { string id = 1; }
+message ModuleResponse { string id = 1; string course_id = 2; string title = 3; int32 position = 4; }
+message CreateLessonRequest { string course_id = 1; string module_id = 2; string title = 3; string content = 4; int32 position = 5; }
+message UpdateLessonRequest { string id = 1; string title = 2; string content = 3; int32 position = 4; }
+message DeleteLessonRequest { string id = 1; }
+message GetLessonRequest { string id = 1; }
+message LessonResponse { string id = 1; string course_id = 2; string module_id = 3; string title = 4; string content = 5; int32 position = 6; }
+message Empty {}
