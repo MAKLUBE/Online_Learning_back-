@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package notifications;
+
+option go_package = "online-learning-adapters/pkg/gen/notifications;notificationpb";
+
+service NotificationService {
+  rpc SendEmail(SendEmailRequest) returns (NotificationResponse);
+  rpc SendWelcomeEmail(SendWelcomeEmailRequest) returns (NotificationResponse);
+  rpc SendPasswordResetEmail(SendPasswordResetEmailRequest) returns (NotificationResponse);
+  rpc SendCourseEnrollmentEmail(SendCourseEnrollmentEmailRequest) returns (NotificationResponse);
+  rpc SendAssignmentGradedEmail(SendAssignmentGradedEmailRequest) returns (NotificationResponse);
+  rpc SendDeadlineReminder(SendDeadlineReminderRequest) returns (NotificationResponse);
+  rpc GetNotificationHistory(GetNotificationHistoryRequest) returns (NotificationHistoryResponse);
+  rpc GetNotificationById(GetNotificationByIdRequest) returns (NotificationResponse);
+  rpc MarkNotificationRead(MarkNotificationReadRequest) returns (NotificationResponse);
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (UnreadCountResponse);
+  rpc UpdateNotificationSettings(UpdateNotificationSettingsRequest) returns (NotificationSettingsResponse);
+  rpc DeleteNotification(DeleteNotificationRequest) returns (Empty);
+  rpc ScheduleNotification(ScheduleNotificationRequest) returns (NotificationResponse);
+}
+
+message SendEmailRequest { string user_id = 1; string email = 2; string subject = 3; string body = 4; }
+message SendWelcomeEmailRequest { string user_id = 1; string email = 2; string name = 3; }
+message SendPasswordResetEmailRequest { string user_id = 1; string email = 2; string reset_token = 3; }
+message SendCourseEnrollmentEmailRequest { string user_id = 1; string email = 2; string course_id = 3; }
+message SendAssignmentGradedEmailRequest { string user_id = 1; string email = 2; string assignment_id = 3; double grade = 4; }
+message SendDeadlineReminderRequest { string user_id = 1; string email = 2; string assignment_id = 3; }
+message GetNotificationHistoryRequest { string user_id = 1; }
+message GetNotificationByIdRequest { string id = 1; }
+message MarkNotificationReadRequest { string id = 1; }
+message GetUnreadCountRequest { string user_id = 1; }
+message UpdateNotificationSettingsRequest { string user_id = 1; bool email_enabled = 2; }
+message DeleteNotificationRequest { string id = 1; }
+message ScheduleNotificationRequest { string user_id = 1; string email = 2; string subject = 3; string body = 4; string send_at = 5; }
+message NotificationResponse { string id = 1; string user_id = 2; string email = 3; string subject = 4; string body = 5; string type = 6; string status = 7; bool read = 8; }
+message NotificationHistoryResponse { repeated NotificationResponse notifications = 1; }
+message UnreadCountResponse { int32 count = 1; }
+message NotificationSettingsResponse { string user_id = 1; bool email_enabled = 2; }
+message Empty {}
