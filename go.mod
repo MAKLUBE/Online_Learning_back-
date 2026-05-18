@@ -1,4 +1,4 @@
-module Final_Online_Learning
+module online-learning-platform
 
 go 1.25
 
