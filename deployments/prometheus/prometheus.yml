@@ -1,0 +1,92 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+  external_labels:
+    project: "online-learning-platform"
+    env: "local"
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: api-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api-gateway:9100"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "api-gateway"
+
+  - job_name: auth-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["auth-service:9101"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "auth-service"
+
+  - job_name: courses-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["courses-service:9102"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "courses-service"
+
+  - job_name: learning-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["learning-service:9103"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "learning-service"
+
+  - job_name: notification-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["notification-service:9104"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "notification-service"
+
+  # PostgreSQL exporter
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "postgres"
+
+  # Redis exporter
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "redis"
+
+  # NATS exporter
+  - job_name: nats
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["nats-exporter:7777"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "nats"

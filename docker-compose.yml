@@ -1,0 +1,216 @@
+version: "3.9"
+
+networks:
+  olp-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: online_learning_postgres
+    networks: [olp-net]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployments/postgres/init-multiple-dbs.sql:/docker-entrypoint-initdb.d/001-init-multiple-dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: online_learning_redis
+    networks: [olp-net]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2-alpine
+    container_name: online_learning_nats
+    networks: [olp-net]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-m", "8222"]
+
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: deployments/docker/api-gateway.Dockerfile
+    container_name: online_learning_api_gateway
+    networks: [olp-net]
+    ports:
+      - "8080:8080"   # HTTP API
+      - "9100:9100"   # Prometheus metrics
+    environment:
+      AUTH_SERVICE_ADDR: auth-service:50051
+      COURSES_SERVICE_ADDR: courses-service:50052
+      LEARNING_SERVICE_ADDR: learning-service:50053
+      METRICS_PORT: "9100"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/auth-service.Dockerfile
+    container_name: online_learning_auth
+    networks: [olp-net]
+    ports:
+      - "50051:50051"
+      - "9101:9101"   # Prometheus metrics
+    environment:
+      GRPC_PORT: "50051"
+      METRICS_PORT: "9101"
+      AUTH_DATABASE_URL: postgres://postgres:postgres@postgres:5432/user_auth_db?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+
+  courses-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/courses-service.Dockerfile
+    container_name: online_learning_courses
+    networks: [olp-net]
+    ports:
+      - "50052:50052"
+      - "9102:9102"   # Prometheus metrics
+    environment:
+      GRPC_PORT: "50052"
+      METRICS_PORT: "9102"
+      COURSES_DATABASE_URL: postgres://postgres:postgres@postgres:5432/courses_db?sslmode=disable
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  learning-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/courses-service.Dockerfile
+    container_name: online_learning_learning
+    networks: [olp-net]
+    ports:
+      - "50053:50053"
+      - "9103:9103"   # Prometheus metrics
+    environment:
+      GRPC_PORT: "50053"
+      METRICS_PORT: "9103"
+      LEARNING_DATABASE_URL: postgres://postgres:postgres@postgres:5432/learning_db?sslmode=disable
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/auth-service.Dockerfile
+    container_name: online_learning_notifications
+    networks: [olp-net]
+    ports:
+      - "50054:50054"
+      - "9104:9104"   # Prometheus metrics
+    environment:
+      GRPC_PORT: "50054"
+      METRICS_PORT: "9104"
+      NOTIFICATIONS_DATABASE_URL: postgres://postgres:postgres@postgres:5432/notifications_db?sslmode=disable
+      NATS_URL: nats://nats:4222
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats:     { condition: service_started }
+
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: online_learning_postgres_exporter
+    networks: [olp-net]
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: postgresql://postgres:postgres@postgres:5432/postgres?sslmode=disable
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.63.0
+    container_name: online_learning_redis_exporter
+    networks: [olp-net]
+    ports:
+      - "9121:9121"
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      redis: { condition: service_healthy }
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:0.15.0
+    container_name: online_learning_nats_exporter
+    networks: [olp-net]
+    ports:
+      - "7777:7777"
+    command: ["-varz", "-connz", "-routez", "-subz", "http://nats:8222"]
+    depends_on:
+      - nats
+
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: online_learning_prometheus
+    networks: [olp-net]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deployments/prometheus/rules.yml:/etc/prometheus/rules/rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+    depends_on:
+      - postgres-exporter
+      - redis-exporter
+      - nats-exporter
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: online_learning_grafana
+    networks: [olp-net]
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployments/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deployments/grafana/dashboards:/etc/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/overview.json
+      GF_FEATURE_TOGGLES_ENABLE: publicDashboards
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    depends_on:
+      - prometheus

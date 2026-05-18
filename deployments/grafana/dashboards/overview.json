@@ -1,0 +1,626 @@
+{
+  "title": "Online Learning Platform — Overview",
+  "uid": "olp-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "tags": ["online-learning", "microservices", "grpc"],
+  "style": "dark",
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+
+  "templating": {
+    "list":
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(grpc_requests_total, service)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "sort": 1
+      }
+    
+  },
+
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "row",
+      "title": "🟢  Service Health",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Services Online",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "green", "value": 5 }
+            ]
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "expr": "count(up{job!=\"prometheus\",job!=\"postgres\",job!=\"redis\",job!=\"nats\"} == 1)",
+          "legendFormat": "Online",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Total RPS",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "reqps",
+          "decimals": 2
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(grpc_requests_total[1m]))",
+          "legendFormat": "RPS",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Error Rate",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit",
+          "decimals": 2
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(grpc_errors_total[5m])) / sum(rate(grpc_requests_total[5m]))",
+          "legendFormat": "Error %",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Total Requests",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "expr": "sum(grpc_requests_total)",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "PostgreSQL",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        { "expr": "pg_up", "legendFormat": "PostgreSQL", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Redis",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        { "expr": "redis_up", "legendFormat": "Redis", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 10,
+      "type": "row",
+      "title": "📊  gRPC Traffic",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Requests per Second — by Service",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "reqps"
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+      },
+      "targets": [
+        {
+          "expr": "rate(grpc_requests_total{service=~\"$service\"}[1m])",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Errors per Second — by Service",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "user-auth-service" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+      },
+      "targets": [
+        {
+          "expr": "rate(grpc_errors_total{service=~\"$service\"}[1m])",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Error Rate % — by Service",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "showLegend": true, "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+      },
+      "targets": [
+        {
+          "expr": "rate(grpc_errors_total{service=~\"$service\"}[5m]) / rate(grpc_requests_total{service=~\"$service\"}[5m])",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 14,
+      "type": "bargauge",
+      "title": "Total Requests — per Service",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "valueMode": "color",
+        "minVizHeight": 10,
+        "maxVizHeight": 300
+      },
+      "targets": [
+        {
+          "expr": "grpc_requests_total{service=~\"$service\"}",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "id": 20,
+      "type": "row",
+      "title": "🗄️  PostgreSQL",
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Active Connections",
+      "gridPos": { "x": 0, "y": 23, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#5794F2", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 },
+          "unit": "short"
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "showLegend": false } },
+      "targets": [
+        { "expr": "pg_stat_activity_count", "legendFormat": "Connections", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Transactions per Second",
+      "gridPos": { "x": 8, "y": 23, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "expr": "rate(pg_stat_database_xact_commit[1m])", "legendFormat": "commits/s", "refId": "A" },
+        { "expr": "rate(pg_stat_database_xact_rollback[1m])", "legendFormat": "rollbacks/s", "refId": "B" }
+      ]
+    },
+
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "DB Size",
+      "gridPos": { "x": 16, "y": 23, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "bytes"
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "expr": "pg_database_size_bytes", "legendFormat": "{{ datname }}", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 30,
+      "type": "row",
+      "title": "⚡  Redis",
+      "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Memory Used",
+      "gridPos": { "x": 0, "y": 31, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#FF9830", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 },
+          "unit": "bytes"
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "showLegend": false } },
+      "targets": [
+        { "expr": "redis_memory_used_bytes", "legendFormat": "Memory Used", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Commands per Second",
+      "gridPos": { "x": 8, "y": 31, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#73BF69", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "showLegend": false } },
+      "targets": [
+        { "expr": "rate(redis_commands_processed_total[1m])", "legendFormat": "Cmd/s", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "Connected Clients",
+      "gridPos": { "x": 16, "y": 31, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#B877D9", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "showLegend": false } },
+      "targets": [
+        { "expr": "redis_connected_clients", "legendFormat": "Clients", "refId": "A" }
+      ]
+    },
+
+    {
+      "id": 40,
+      "type": "row",
+      "title": "🔔  Alerts & Status Table",
+      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 41,
+      "type": "table",
+      "title": "Service Status",
+      "gridPos": { "x": 0, "y": 39, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value #Up" },
+            "properties": [
+              { "id": "displayName", "value": "Status" },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "0": { "text": "🔴 DOWN", "color": "red" }, "1": { "text": "🟢 UP", "color": "green" } } }
+                ]
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #RPS" },
+            "properties": [
+              { "id": "displayName", "value": "RPS (1m)" },
+              { "id": "unit", "value": "reqps" },
+              { "id": "decimals", "value": 3 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #Errors" },
+            "properties": [
+              { "id": "displayName", "value": "Errors/s (1m)" },
+              { "id": "unit", "value": "reqps" },
+              { "id": "decimals", "value": 3 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #ErrorRate" },
+            "properties": [
+              { "id": "displayName", "value": "Error Rate" },
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 2 },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 0.01 },
+                    { "color": "red", "value": 0.05 }
+                  ]
+                }
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "job" },
+            "properties": [{ "id": "displayName", "value": "Service" }]
+          }
+        ]
+      },
+      "options": {
+        "sortBy": [{ "displayName": "Service", "desc": false }],
+        "footer": { "show": false }
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": { "byField": "job", "mode": "outer" }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "instance": true },
+            "renameByName": {}
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "up{job!=\"prometheus\",job!=\"postgres\",job!=\"redis\",job!=\"nats\"}",
+          "legendFormat": "{{job}}",
+          "refId": "Up",
+          "instant": true
+        },
+        {
+          "expr": "rate(grpc_requests_total[1m])",
+          "legendFormat": "{{service}}",
+          "refId": "RPS",
+          "instant": true
+        },
+        {
+          "expr": "rate(grpc_errors_total[1m])",
+          "legendFormat": "{{service}}",
+          "refId": "Errors",
+          "instant": true
+        },
+        {
+          "expr": "rate(grpc_errors_total[5m]) / rate(grpc_requests_total[5m])",
+          "legendFormat": "{{service}}",
+          "refId": "ErrorRate",
+          "instant": true
+        }
+      ]
+    }
+  ]
+}
