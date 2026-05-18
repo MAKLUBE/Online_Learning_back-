@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package learning;
+
+option go_package = "online-learning-adapters/pkg/gen/learning;learningpb";
+
+service LearningService {
+  rpc EnrollCourse(EnrollCourseRequest) returns (EnrollmentResponse);
+  rpc UnenrollCourse(UnenrollCourseRequest) returns (Empty);
+  rpc ListMyCourses(ListMyCoursesRequest) returns (ListEnrollmentsResponse);
+  rpc GetEnrollment(GetEnrollmentRequest) returns (EnrollmentResponse);
+  rpc MarkLessonCompleted(MarkLessonCompletedRequest) returns (ProgressResponse);
+  rpc GetCourseProgress(GetCourseProgressRequest) returns (ProgressResponse);
+  rpc GetUserProgress(GetUserProgressRequest) returns (ListProgressResponse);
+  rpc CreateAssignment(CreateAssignmentRequest) returns (AssignmentResponse);
+  rpc UpdateAssignment(UpdateAssignmentRequest) returns (AssignmentResponse);
+  rpc SubmitAssignment(SubmitAssignmentRequest) returns (SubmissionResponse);
+  rpc GetSubmission(GetSubmissionRequest) returns (SubmissionResponse);
+  rpc ListSubmissions(ListSubmissionsRequest) returns (ListSubmissionsResponse);
+  rpc GradeAssignment(GradeAssignmentRequest) returns (SubmissionResponse);
+  rpc GetGrades(GetGradesRequest) returns (ListSubmissionsResponse);
+}
+
+message EnrollCourseRequest { string user_id = 1; string course_id = 2; }
+message UnenrollCourseRequest { string user_id = 1; string course_id = 2; }
+message ListMyCoursesRequest { string user_id = 1; }
+message GetEnrollmentRequest { string user_id = 1; string course_id = 2; }
+message EnrollmentResponse { string id = 1; string user_id = 2; string course_id = 3; string status = 4; }
+message ListEnrollmentsResponse { repeated EnrollmentResponse enrollments = 1; }
+message MarkLessonCompletedRequest { string user_id = 1; string course_id = 2; string lesson_id = 3; int32 total_lessons = 4; }
+message GetCourseProgressRequest { string user_id = 1; string course_id = 2; }
+message GetUserProgressRequest { string user_id = 1; }
+message ProgressResponse { string user_id = 1; string course_id = 2; int32 completed_lessons = 3; int32 total_lessons = 4; double percentage = 5; }
+message ListProgressResponse { repeated ProgressResponse progress = 1; }
+message CreateAssignmentRequest { string course_id = 1; string lesson_id = 2; string title = 3; string due_at = 4; }
+message UpdateAssignmentRequest { string id = 1; string title = 2; string due_at = 3; }
+message AssignmentResponse { string id = 1; string course_id = 2; string lesson_id = 3; string title = 4; string due_at = 5; }
+message SubmitAssignmentRequest { string assignment_id = 1; string user_id = 2; string answer = 3; }
+message GetSubmissionRequest { string id = 1; }
+message ListSubmissionsRequest { string assignment_id = 1; }
+message GradeAssignmentRequest { string submission_id = 1; double grade = 2; }
+message GetGradesRequest { string user_id = 1; }
+message SubmissionResponse { string id = 1; string assignment_id = 2; string user_id = 3; string answer = 4; double grade = 5; string status = 6; }
+message ListSubmissionsResponse { repeated SubmissionResponse submissions = 1; }
+message Empty {}
